@@ -134,7 +134,7 @@ contract NDFILPool is LPTokenWrapper, Ownable, Operator {
             uint256 income = reward.mul(80).div(100);
             _rewardToken.safeTransfer(msg.sender, income);
             address referrer = userMap[msg.sender].referrer;
-            if(userMap[referrer].active){
+            if(userMap[referrer].active && isStarPlan[referrer]){
                 income = income.mul(10).div(100);
                 _rewardToken.safeTransfer(referrer, income);
                 userMap[referrer].totalIncome = userMap[referrer].totalIncome.add(income);
@@ -178,7 +178,7 @@ contract NDFILPool is LPTokenWrapper, Ownable, Operator {
             uint256 income = reward.mul(80).div(100);
             _rewardToken.safeTransfer(msg.sender, income);
             address referrer = userMap[msg.sender].referrer;
-            if(userMap[referrer].active){
+            if(userMap[referrer].active && isStarPlan[referrer]){
                 income = income.mul(10).div(100);
                 _rewardToken.safeTransfer(referrer, income);
                 userMap[referrer].totalIncome = userMap[referrer].totalIncome.add(income);
@@ -188,6 +188,7 @@ contract NDFILPool is LPTokenWrapper, Ownable, Operator {
 
     function getSuboradinateInfo() public view returns(address[] memory subordinates, uint256[] memory values) {
         subordinates = userMap[msg.sender].subordinates;
+        values = new uint256[](subordinates.length);
         for(uint i = 0; i < subordinates.length; i++){
             values[i] = balanceOf(subordinates[i]);
         }
@@ -227,7 +228,7 @@ contract NDFILPool is LPTokenWrapper, Ownable, Operator {
 
     function bindRelationship(address account, address referrer) internal {
         if (userMap[account].active) return;
-        if(userMap[referrer].active && isStarPlan[referrer]) {
+        if(userMap[referrer].active && (isStarPlan[referrer] || balanceOf(referrer) >= 300 * 1e18)) {
             userMap[account].referrer = referrer;
             userMap[referrer].subordinates.push(account);
             userMap[referrer].subNum++;
