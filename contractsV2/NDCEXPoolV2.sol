@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.6.0;
+pragma solidity 0.6.12;
 
 import './lib/IERC20.sol';
 import './lib/INDFILPool.sol';
@@ -34,6 +34,8 @@ contract NDCEXPoolV2 is LPTokenWrapper, Ownable {
     event Withdrawn(address indexed user, uint256 amount);
     event RewardPaid(address indexed user, uint256 reward);
     event ReleasePaid(address indexed user, uint256 reward);
+    event ChangeBorrower(address borrower);
+    event RecoverWrongToken(address indexed tokenAddress, uint256 amount);
 
     constructor(
         address rewardToken,
@@ -45,6 +47,9 @@ contract NDCEXPoolV2 is LPTokenWrapper, Ownable {
         address borrower
     ) public {
         require(rewardToken!=lpt,'');
+        require(rewardToken != address(0), "Zero address!");
+        require(lpt != address(0), "Zero address!");
+        require(token != address(0), "Zero address!");
         _rewardToken = IERC20(rewardToken);
         _totalReward = reward;
         _lpt = IERC20(lpt);
@@ -76,6 +81,7 @@ contract NDCEXPoolV2 is LPTokenWrapper, Ownable {
 
     function changeBorrower(address borrower) external onlyOwner{
         _borrower = borrower;
+        emit ChangeBorrower(borrower);
     }
 
     function rewardPerToken() public view returns (uint256) {
@@ -84,13 +90,12 @@ contract NDCEXPoolV2 is LPTokenWrapper, Ownable {
         }
         uint nowTime = block.timestamp;
         uint totalReward = _totalReward;
-        uint rewardRate = totalReward.mul(_pct).div(100).div(DURATION);
+        uint rewardRate = totalReward.mul(_pct).mul(1e18).div(100).div(DURATION);
         return
         rewardPerTokenStored.add(
             nowTime
             .sub(lastUpdateTime)
             .mul(rewardRate)
-            .mul(1e18)
             .div(totalSupply())
         );
     }
@@ -223,5 +228,6 @@ contract NDCEXPoolV2 is LPTokenWrapper, Ownable {
         require(tokenAddress!=address(_lpt), "Cannot be stakedToken!");
         require(tokenAddress!=address(_rewardToken), "Cannot be rewardToken!");
         IERC20(tokenAddress).safeTransfer(address(msg.sender), amount);
+        emit RecoverWrongToken(tokenAddress, amount);
     }
 }

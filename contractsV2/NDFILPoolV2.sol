@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.6.0;
+pragma solidity 0.6.12;
 
 import './lib/IERC20.sol';
 import './lib/INDFILPool.sol';
@@ -59,6 +59,9 @@ contract NDFILPoolV2 is Ownable {
     event Withdrawn(address indexed user, uint256 amount);
     event RewardPaid(address indexed user, uint256 reward);
     event ReleasePaid(address indexed user, uint256 reward);
+    event ChangeBorrower(address borrower);
+    event ChangeBoard(address board);
+    event RecoverWrongToken(address indexed tokenAddress, uint256 amount);
 
     constructor(
         address rewardToken,
@@ -70,6 +73,11 @@ contract NDFILPoolV2 is Ownable {
         address board
     ) public {
         require(rewardToken!=lpt,'');
+        require(rewardToken != address(0), "Zero address!");
+        require(lpt != address(0), "Zero address!");
+        require(relationToken != address(0), "Zero address!");
+        require(borrower != address(0), "Zero address!");
+        require(board != address(0), "Zero address!");
         _rewardToken = IERC20(rewardToken);
         _totalReward = reward;
         _power = power;
@@ -102,21 +110,25 @@ contract NDFILPoolV2 is Ownable {
     }
 
     function changeBorrower(address borrower) external onlyOwner{
+        require(borrower != address(0), "Zero address!");
         _borrower = borrower;
+        emit ChangeBorrower(borrower);
     }
 
     function changeBoard(address board) external onlyOwner{
+        require(board != address(0), "Zero address!");
         _board = IBoard(board);
+        emit ChangeBoard(board);
     }
 
     function rewardPerToken() public view returns (uint256) {
-        if (totalSupply() == 0) {
+        if (totalSupply() == 0 || _power == 0) {
             return rewardPerTokenStored;
         }
         uint nowTime = block.timestamp;
         uint totalReward = _totalReward;
         uint power = _power;
-        uint rewardRate = totalSupply().mul(totalReward).div(
+        uint rewardRate = totalSupply().mul(totalReward).mul(1e18).div(
             power.min(totalSupply().mul(10).div(7))
         ).div(DURATION);
         return
@@ -124,7 +136,6 @@ contract NDFILPoolV2 is Ownable {
             nowTime
             .sub(lastUpdateTime)
             .mul(rewardRate)
-            .mul(1e18)
             .div(totalSupply())
         );
     }
@@ -287,5 +298,6 @@ contract NDFILPoolV2 is Ownable {
         require(tokenAddress!=address(_lpt), "Cannot be stakedToken!");
         require(tokenAddress!=address(_rewardToken), "Cannot be rewardToken!");
         IERC20(tokenAddress).safeTransfer(address(msg.sender), amount);
+        emit RecoverWrongToken(tokenAddress, amount);
     }
 }

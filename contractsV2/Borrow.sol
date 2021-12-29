@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.6.0;
+pragma solidity 0.6.12;
 
 import './lib/SafeMath.sol';
 import './lib/IERC20.sol';
@@ -30,7 +30,6 @@ contract Borrow is Ownable {
     uint256 public utilizationFactor = 913242009110400; //31709791983*28800;
     uint256 public utilizationFactor2 = 2739726027388800; //95129375951*28800;
     uint256 public turnPoint = 90 * 1e16;
-    uint256 private constant MAX = ~uint256(0);
     uint256 public reserveFactor = 20;
     uint256 public borrowIndex = 1e18;
     uint256 public borrowIndex1 = 1e18;
@@ -394,7 +393,7 @@ contract Borrow is Ownable {
         }
     }
     
-    function clearAddrs(uint256 poolId, address[] memory addrs) public{
+    function clearAddrs(uint256 poolId, address[] memory addrs) external{
         for(uint256 i=0;i<addrs.length;i++){
             clearAddr(poolId, addrs[i]);
         }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.6.0;
+pragma solidity 0.6.12;
 
 import './lib/IERC20.sol';
 import './lib/INDFILPool.sol';
@@ -151,6 +151,7 @@ contract FILPool is Ownable {
 
     // reward /GB/s
     function getRewardRate() public view returns(uint256){
+        if(_power == 0) return 0;
         return _totalReward.mul(1e18).div(_power).div(DURATION);
     }
 
@@ -221,8 +222,8 @@ contract FILPool is Ownable {
             userInfoMap[poolId][account].rewardsPaid = userInfoMap[poolId][account].rewardsPaid.add(reward);
             emit RewardPaid(account, reward);
 
-            uint256 toPlatform = reward.mul(40).div(100);
-            uint256 toMarket = reward.mul(10).div(100);
+            uint256 toPlatform = reward.mul(_platformPct).div(100);
+            uint256 toMarket = reward.mul(_marketPct).div(100);
             _rewardToken.safeTransfer(_platform, toPlatform);
             _rewardToken.safeTransfer(_market, toMarket);
             reward = reward.sub(toPlatform).sub(toMarket);

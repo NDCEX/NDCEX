@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.6.0;
+pragma solidity 0.6.12;
 
 import './lib/IERC20.sol';
 import './lib/SafeERC20.sol';
@@ -44,11 +44,13 @@ contract Board is ShareWrapper, Ownable {
     mapping(uint256 => uint256) public rewardTotalHistory;
     mapping(uint256 => mapping(address => uint256)) public rewardHistory;
     uint256 public totalReward;
-    uint256 public startTime = 1637856000;
+    uint256 public constant startTime = 1637856000;
     
     mapping(address => bool) public operators;
 
     constructor(address _stakedToken, address _rewardToken) public {
+        require(_stakedToken != address(0), "Zero address!");
+        require(_rewardToken != address(0), "Zero address!");
         stakedToken = IERC20(_stakedToken);
         rewardToken = IERC20(_rewardToken);
         
@@ -60,10 +62,11 @@ contract Board is ShareWrapper, Ownable {
         boardHistory.push(genesisSnapshot);
     }
     
-    function setOperator(address[] memory operatorList, bool flag) public onlyOwner{
+    function setOperator(address[] memory operatorList, bool flag) external onlyOwner{
         for(uint256 i=0;i<operatorList.length;i++){
             operators[operatorList[i]] = flag;
         }
+        emit SetOperator(operatorList, flag);
     }
     
     modifier onlyOperator() {
@@ -209,10 +212,13 @@ contract Board is ShareWrapper, Ownable {
         require(tokenAddress!=address(stakedToken), "Cannot be stakedToken!");
         require(tokenAddress!=address(rewardToken), "Cannot be rewardToken!");
         IERC20(tokenAddress).safeTransfer(address(msg.sender), amount);
+        emit RecoverWrongToken(tokenAddress, amount);
     }
 
     event Staked(address indexed user, uint256 amount);
     event Withdrawn(address indexed user, uint256 amount);
     event RewardPaid(address indexed user, uint256 reward);
     event RewardAdded(address indexed user, uint256 reward);
+    event SetOperator(address[] operatorList, bool flag);
+    event RecoverWrongToken(address indexed tokenAddress, uint256 amount);
 }
